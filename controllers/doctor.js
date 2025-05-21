@@ -33,6 +33,51 @@ router.post('/signup', async (req, res) => {
         return res.status(400).json(responses.error("Something went wrong!"))
     }
 });
+
+router.post('/addpatient', authMiddleware, async (req, res) => {
+    if (req.user.role !== 'doctor') {
+      return res.status(401).json({ status: "error", message: "Unauthorized request" });
+    }
+
+    const { name, mobile, password, uhid, email, age, gender} = req.body;  
+    if (!name || !mobile || !uhid || !password || !gender || !age) {
+      return res.status(400).json({ status: "error", message: "Missing required fields: name, mobile, gender or age" });
+    }
+
+    try {
+      const existingUser = await User.findOne({ mobile });
+      if (existingUser) {
+        return res.status(400).json({ status: "error", message: "A user with this mobile number already exists" });
+      }
+
+      const newPatient = new User({
+        name,
+        mobile,
+        password,
+        uhid,
+        role: "patient",
+        email,
+        age, 
+        gender,
+        doctor: req.user._id
+        
+      });
+      await newPatient.save();
+
+      console.log("Patient data:", {
+        id: newPatient._id,
+        name: newPatient.name,
+        uhid: newPatient.uhid,
+        mobile: newPatient.mobile,
+        role: newPatient.role
+    });    
+      res.status(201).json({ status: "success", message: "Patient added successfully", patient: newPatient });
+    } catch (error) {
+      console.error("Error adding patient:", error);
+      res.status(500).json({ status: "error", message: "Server error" });
+    }
+});
+
 router.post('/allpatient', authMiddleware, async (req, res) => {
     if (req.user.role === 'patient') {
         res.status(401).json(responses.error("Invalid request"));
@@ -95,47 +140,6 @@ router.post('/allpatient', authMiddleware, async (req, res) => {
     }
 });
 
-router.post('/addpatient', authMiddleware, async (req, res) => {
-    if (req.user.role !== 'doctor') {
-      return res.status(401).json({ status: "error", message: "Unauthorized request" });
-    }
-
-    const { name, mobile, gender, age } = req.body;  
-    if (!name || !mobile || !gender || !age) {
-      return res.status(400).json({ status: "error", message: "Missing required fields: name, mobile, gender or age" });
-    }
-
-    try {
-      const existingUser = await User.findOne({ mobile });
-      if (existingUser) {
-        return res.status(400).json({ status: "error", message: "A user with this mobile number already exists" });
-      }
-
-      const computedPassword = mobile + name;  
-      const newPatient = new User({
-        name,
-        mobile,
-        gender,
-        role: "patient",
-        age, // Default age if not provided.
-        password: computedPassword,
-        doctor: req.user._id
-        
-      });
-      await newPatient.save();
-
-      console.log("Patient data:", {
-        id: newPatient._id,
-        name: newPatient.name,
-        mobile: newPatient.mobile,
-        role: newPatient.role
-    });    
-      res.status(201).json({ status: "success", message: "Patient added successfully", patient: newPatient });
-    } catch (error) {
-      console.error("Error adding patient:", error);
-      res.status(500).json({ status: "error", message: "Server error" });
-    }
-});
 router.post('/get-details', authMiddleware, async (req, res) => {
     if (req.user.role === 'patient') {
         res.status(401).json(responses.error("Invalid request"));
@@ -144,85 +148,68 @@ router.post('/get-details', authMiddleware, async (req, res) => {
     try {
         const name = req.user.name;
         const hospital = req.user.hospital;
-        const speciality = "Obstetrics";
         const patients = await User.find({role: "patient", doctor: req.user});
         const patientCount = patients.length;
-        res.json(responses.success_data({name, hospital, speciality, patientCount}));
+        res.json(responses.success_data({name, hospital, patientCount}));
     } catch (error) {
         console.log(error);
         res.json(responses.error("Some error occurred"));
     }
 });
 
-router.post('/adddrugpatient', authMiddleware , async(req,res) => {
-    if (req.user.role !== 'doctor') {
-        return res.status(401).json(responses.error("Unauthorized request"));
-      }    
+router.post('/adddrugpatient', authMiddleware, async (req, res) => {
+  if (req.user.role !== 'doctor') {
+    return res.status(401).json(responses.error("Unauthorized request"));
+  }
 
+  const {
+    mobile,
+    diagnosis,
+    otherDiagnosis, // Add this to destructure from req.body
+    weight,
+    sbp,
+    dbp,
+    status,
+    can_walk,
+    can_climb,
+    medicines
+  } = req.body;
 
-      const {
-        name,
-        age,
-        mobile,
-        diagnosis,
-        weight,
-        sbp,
-        dbp,
-        fillername,
-        status,
-        can_walk,
-        can_climb,
-        medicines
-      } = req.body;
-  // Validate required fields
-    if (!name || !age || !mobile) {
-        return res.status(400).json(responses.error("Missing required fields: name, age, or phone"));
+  try {
+    // Find patient by phone number
+    const patient = await User.findOne({ mobile: mobile, role: "patient" });
+    if (!patient) {
+      return res.status(404).json(responses.error("Patient not found"));
     }
 
-
-    try {
-        // Find patient by phone number
-        const patient = await User.findOne({ mobile: mobile, role: "patient" });
-        
-        if (!patient) {
-          // Patient doesn't exist - return error message
-          return res.status(404).json(responses.error("Patient not found. Please add patient first."));
-        }
-    
-        // Patient exists - proceed with adding drug data
-        const patientDrug = new PatientDrug({
-          patient: patient._id,
-          name,
-          age: Number(age),
-          mobile,
-          diagnosis,
-          weight: weight ? Number(weight) : undefined,
-          sbp: sbp ? Number(sbp) : undefined,
-          dbp: dbp ? Number(dbp) : undefined,
-          fillername,
-          status,
-          can_walk,
-          can_climb,
-          medicines: medicines || [],
-          created_by: req.user._id
-        });
-    
-
-        await patientDrug.save();
-    
-
-        return res.status(201).json(responses.success_data({
-          message: "Patient drug data added successfully",
-          patientDrug
-        }));
-      } catch (error) {
-        console.error("Error adding patient drug data:", error);
-        return res.status(500).json(responses.error("Server error"));
-      }
+    // Patient exists - proceed with adding drug data
+    const patientDrug = new PatientDrug({
+      patient: patient._id,
+      mobile,
+      diagnosis,
+      otherDiagnosis: otherDiagnosis || '', // Ensure it's included, default to empty string if not provided
+      weight: weight ? Number(weight) : undefined,
+      sbp: sbp ? Number(sbp) : undefined,
+      dbp: dbp ? Number(dbp) : undefined,
+      status,
+      can_walk,
+      can_climb,
+      medicines: medicines || [],
+      created_by: req.user._id
     });
 
+    await patientDrug.save();
 
-// Add this to your existing routes file (e.g., doctor.js)
+    return res.status(201).json(responses.success_data({
+      message: "Patient drug data added successfully",
+      patientDrug
+    }));
+  } catch (error) {
+    console.warn("Error adding patient drug data:", error);
+    return res.status(500).json(responses.error(error.message || "Server error"));
+  }
+});
+
 router.post('/getinfo/:mobile', authMiddleware, async (req, res) => {
   try {
     // Get patient mobile number from request params
@@ -250,6 +237,7 @@ router.post('/getinfo/:mobile', authMiddleware, async (req, res) => {
       status: "success", 
       data: {
         name: patient.name,
+        uhid: patient.uhid,
         age: patient.age ? `${patient.age} years` : 'N/A',
         gender: patient.gender || 'N/A',
         mobile: patient.mobile,
@@ -264,7 +252,6 @@ router.post('/getinfo/:mobile', authMiddleware, async (req, res) => {
   }
 });
     
-/// GET patient drug data by mobile number
 router.post('/patient-drug-data/mobile/:mobile', authMiddleware, async (req, res) => {
   try {
     // console.log("REQUEST RECEICED");
@@ -283,7 +270,6 @@ router.post('/patient-drug-data/mobile/:mobile', authMiddleware, async (req, res
 
     // Fetch and sort by created_at (descending order = newest first)
     const patientDrugs = await PatientDrug.find({ mobile }).sort({ created_at: -1 });
-    console.log("LUND");
     console.log(patientDrugs);
 
     if (!patientDrugs) {

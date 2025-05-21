@@ -4,6 +4,11 @@ const userSchema = new mongoose.Schema({
     name: {type: String, required: true},
     mobile: {type: String, required: true, unique: true},
     password: {type: String, required: true},
+    uhid: {
+        type: String, required: () => {
+            return this.role === "patient"
+        }
+    },
     role: {type: String, enum: ['doctor', 'patient'], required: true},
     email: {type: String, required: false},
     // only for patients
@@ -13,7 +18,7 @@ const userSchema = new mongoose.Schema({
         }
     },
     gender: {
-        type: String, enum: ['male', 'female', 'other','Male','Female'], required: () => {
+        type: String, enum: ['male', 'female', 'other','Male','Female', 'Other'], required: () => {
             return this.role === "patient"
         }
     },
