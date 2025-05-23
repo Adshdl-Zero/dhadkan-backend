@@ -14,6 +14,7 @@ const doctorRoutes = require('./controllers/doctor');
 const authRoutes = require('./controllers/auth')
 const chatRoutes = require('./controllers/chat');
 const audioRoutes = require('./controllers/audio');
+const reportRoutes = require('./controllers/report_upload')
 
 const port = process.env.PORT || 3000;
 
@@ -35,6 +36,7 @@ app.use('/chat', chatRoutes);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use("/audio" , audioRoutes );
 app.use("/transcribe" , audioRoutes );
+app.use('/reports', reportRoutes);
 
 
 

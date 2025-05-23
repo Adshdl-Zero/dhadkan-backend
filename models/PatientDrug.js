@@ -5,7 +5,7 @@ const { Schema, model, Types } = mongoose;
 const medicineSchema = new mongoose.Schema({
     name : { type : String , required : true},
     format :{ type : String , enum: ['Tablet', 'Syrup']},
-    dosage : { type : Number },
+    dosage : { type : String },
     frequency: {
         type: String,
         enum: ['Once a day', 'Twice a day', 'Thrice a day', 'Other'],

@@ -230,7 +230,10 @@ router.post('/getinfo/:mobile', authMiddleware, async (req, res) => {
     }
     // Get the latest PatientDrug record to find the diagnosis
     const latestDrugRecord = await PatientDrug.findOne({ patient: patient._id })
-      .sort({ created_at: -1 });    
+      .sort({ created_at: -1 }); 
+      
+
+
 
     // Return patient info
     res.json({
@@ -242,7 +245,8 @@ router.post('/getinfo/:mobile', authMiddleware, async (req, res) => {
         gender: patient.gender || 'N/A',
         mobile: patient.mobile,
         doctorMobile: doctor.mobile,
-        disease: latestDrugRecord?.diagnosis || 'N/A'  // Hardcoded for now, as discussed
+        diagnosis: latestDrugRecord?.diagnosis || 'N/A', 
+        customDisease: latestDrugRecord?.otherDiagnosis || 'N/A',
       }
     });
     
@@ -282,6 +286,7 @@ router.post('/patient-drug-data/mobile/:mobile', authMiddleware, async (req, res
     res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }
 });
+
 
 
 module.exports = router;
