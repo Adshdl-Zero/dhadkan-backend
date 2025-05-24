@@ -133,7 +133,6 @@ router.post('/upload/:patientId', authMiddleware, (req, res) => {
   });
 });
 
-// Get all reports for a patient - Modified to return latest report with all files
 router.get('/:patientId', authMiddleware, async (req, res) => {
   try {
     const reports = await Report.find({ patient: req.params.patientId })
@@ -144,14 +143,11 @@ router.get('/:patientId', authMiddleware, async (req, res) => {
       return res.status(404).json({ message: 'No reports found for this patient' });
     }
 
-    // Get the latest report and structure the response
     const latestReport = reports[0];
     
-    // Create a consolidated report with all available files from all reports
     const consolidatedFiles = {};
     const reportTypes = ['opd_card', 'echo', 'ecg', 'cardiac_mri', 'bnp', 'biopsy', 'biochemistry_report'];
     
-    // For each report type, find the most recent file across all reports
     reportTypes.forEach(type => {
       for (const report of reports) {
         if (report.files && report.files[type]) {
@@ -160,7 +156,7 @@ router.get('/:patientId', authMiddleware, async (req, res) => {
             reportTime: report.time,
             reportId: report._id
           };
-          break; // Take the first (most recent) occurrence
+          break; 
         }
       }
     });
@@ -182,7 +178,6 @@ router.get('/:patientId', authMiddleware, async (req, res) => {
 });
 
 
-// Get single report by ID
 router.get('/report/:reportId', authMiddleware, async (req, res) => {
   try {
     const report = await Report.findById(req.params.reportId);

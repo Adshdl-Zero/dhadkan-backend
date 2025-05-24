@@ -3,10 +3,9 @@ const User = require('../models/user');
 const jwt = require('jsonwebtoken');
 const responses = require('../utils/responses')
 const authMiddleware = require('./authMiddleware');
-const DailyData = require("../models/DailyData");
 const PatientDrug = require("../models/PatientDrug");
 const router = express.Router();
-const utils = require('../utils/formatDailyData')
+
 router.get('/', (req, res) => {
     res.json({'all': 'good'});
 })
@@ -88,23 +87,10 @@ router.post('/allpatient', authMiddleware, async (req, res) => {
         let result = [];
 
         for (const patient of patients) {
-            // Get data from both collections
-            const dailyData = await DailyData.find({patient: patient});
             const drugData = await PatientDrug.find({patient: patient._id});
             
-            // Create combined dataset
             let combinedData = [];
-            
-            // Add dailyData entries
-            dailyData.forEach(data => {
-                combinedData.push({
-                    timeStamp: new Date(data.time),
-                    sbp: data.sbp,
-                    dbp: data.dbp,
-                    weight: data.weight
-                });
-            });            
-            // Add drugData entries
+
             drugData.forEach(drug => {
                 combinedData.push({
                     timeStamp: new Date(drug.created_at),
@@ -113,21 +99,20 @@ router.post('/allpatient', authMiddleware, async (req, res) => {
                     weight: drug.weight
                 });
             });            
-            // Sort combined data chronologically (oldest first)
+            
             combinedData.sort((a, b) => a.timeStamp - b.timeStamp);            
-            // Create the graph data directly here instead of using utils.generateGraphData
             const graphData = {
                 sbp: [],
                 dbp: [],
                 weight: [],
-                time: [] // Use indices for x-axis values
+                time: [] 
             };            
-            // Extract values in chronological order
+
             combinedData.forEach((data, index) => {
                 graphData.sbp.push(data.sbp || 0);
                 graphData.dbp.push(data.dbp || 0);
                 graphData.weight.push(data.weight || 0);
-                graphData.time.push(index); // Use index as x-value
+                graphData.time.push(index); 
             });
             
             result.push({'patient': patient, 'graphData': graphData});
@@ -144,7 +129,6 @@ router.post('/get-details', authMiddleware, async (req, res) => {
     if (req.user.role === 'patient') {
         res.status(401).json(responses.error("Invalid request"));
     }
-
     try {
         const name = req.user.name;
         const hospital = req.user.hospital;
@@ -165,7 +149,7 @@ router.post('/adddrugpatient', authMiddleware, async (req, res) => {
   const {
     mobile,
     diagnosis,
-    otherDiagnosis, // Add this to destructure from req.body
+    otherDiagnosis,
     weight,
     sbp,
     dbp,
@@ -176,18 +160,16 @@ router.post('/adddrugpatient', authMiddleware, async (req, res) => {
   } = req.body;
 
   try {
-    // Find patient by phone number
     const patient = await User.findOne({ mobile: mobile, role: "patient" });
     if (!patient) {
       return res.status(404).json(responses.error("Patient not found"));
     }
 
-    // Patient exists - proceed with adding drug data
     const patientDrug = new PatientDrug({
       patient: patient._id,
       mobile,
       diagnosis,
-      otherDiagnosis: otherDiagnosis || '', // Ensure it's included, default to empty string if not provided
+      otherDiagnosis: otherDiagnosis || '', 
       weight: weight ? Number(weight) : undefined,
       sbp: sbp ? Number(sbp) : undefined,
       dbp: dbp ? Number(dbp) : undefined,
@@ -212,30 +194,22 @@ router.post('/adddrugpatient', authMiddleware, async (req, res) => {
 
 router.post('/getinfo/:mobile', authMiddleware, async (req, res) => {
   try {
-    // Get patient mobile number from request params
     const patientMobile = req.params.mobile;
     
-    // Find patient by MOBILE number instead of ID
     const patient = await User.findOne({ mobile: patientMobile, role: 'patient' });
     
     if (!patient) {
       return res.status(404).json({ status: "error", message: "Patient not found" });
     }
     
-    // Find doctor details
     const doctor = await User.findById(patient.doctor);
     
     if (!doctor) {
       return res.status(404).json({ status: "error", message: "Doctor information not found" });
     }
-    // Get the latest PatientDrug record to find the diagnosis
     const latestDrugRecord = await PatientDrug.findOne({ patient: patient._id })
       .sort({ created_at: -1 }); 
       
-
-
-
-    // Return patient info
     res.json({
       status: "success", 
       data: {
@@ -258,7 +232,6 @@ router.post('/getinfo/:mobile', authMiddleware, async (req, res) => {
     
 router.post('/patient-drug-data/mobile/:mobile', authMiddleware, async (req, res) => {
   try {
-    // console.log("REQUEST RECEICED");
 
     if (req.user.role !== 'doctor') {
       return res.status(403).json({ success: false, message: "Access denied" });
@@ -267,7 +240,6 @@ router.post('/patient-drug-data/mobile/:mobile', authMiddleware, async (req, res
     const mobile = req.params.mobile;
     console.log(mobile);
 
-    // Validate mobile
     if (!mobile || mobile.length < 10) {
       return res.status(400).json({ success: false, message: "Invalid mobile number format" });
     }
@@ -286,8 +258,6 @@ router.post('/patient-drug-data/mobile/:mobile', authMiddleware, async (req, res
     res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }
 });
-
-
 
 module.exports = router;
 

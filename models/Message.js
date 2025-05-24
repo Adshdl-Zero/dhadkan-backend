@@ -4,8 +4,7 @@ const messageSchema = new mongoose.Schema({
     receiver: {type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true},
     message_type: {type: String, enum: ['text', 'audio'], required: true},
     text: {type: String},
-    filename: {type: String},
-    audio_text: {type: String},
+    audio_url: {type: String},
     time: {type: Date, default: Date.now},
 })
 

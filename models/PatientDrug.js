@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
 const { Schema, model, Types } = mongoose;
 
-
 const medicineSchema = new mongoose.Schema({
     name : { type : String , required : true},
     format :{ type : String , enum: ['Tablet', 'Syrup']},
