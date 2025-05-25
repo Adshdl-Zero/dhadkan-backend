@@ -27,7 +27,7 @@ const isImage = (mimetype) => ALLOWED_IMAGE_TYPES.includes(mimetype);
 const isPDF = (mimetype) => mimetype === ALLOWED_PDF_TYPE;
 
 router.post('/upload/:patientId', authMiddleware, (req, res) => {
-  console.log('User:', req.user._id);
+  // console.log('User:', req.user._id);
   
   multiUpload(req, res, async (err) => {
     if (err) {
@@ -59,8 +59,8 @@ router.post('/upload/:patientId', authMiddleware, (req, res) => {
       const fields = Object.keys(req.files || {});
       const reportData = {};
       
-      console.log('Files received:', fields);
-      console.log('File details:', req.files);
+      // console.log('Files received:', fields);
+      // console.log('File details:', req.files);
 
       for (const field of fields) {
         const files = req.files[field];
@@ -70,12 +70,12 @@ router.post('/upload/:patientId', authMiddleware, (req, res) => {
 
         const file = files[0];
         
-        console.log(`Processing ${field}:`, {
-          originalname: file.originalname,
-          mimetype: file.mimetype,
-          size: file.size,
-          path: file.path
-        });
+        // console.log(`Processing ${field}:`, {
+        //   originalname: file.originalname,
+        //   mimetype: file.mimetype,
+        //   size: file.size,
+        //   path: file.path
+        // });
 
         if (!isImage(file.mimetype) && !isPDF(file.mimetype)) {
           throw new Error(`Invalid file type for ${field}: ${file.mimetype}`);
@@ -107,7 +107,7 @@ router.post('/upload/:patientId', authMiddleware, (req, res) => {
       });
 
       await report.save();
-      console.log('Report saved successfully:', report._id);
+      // console.log('Report saved successfully:', report._id);
       
       res.status(201).json({
         success: true,

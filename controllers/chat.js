@@ -84,7 +84,7 @@ router.post('/get-texts', authMiddleware, async (req, res) => {
 
         return res.json(responses.success_data(messages));
     } catch (error) {
-        console.log(error);
+        // console.log(error);
         return res.json(responses.error(error));
     }
 })

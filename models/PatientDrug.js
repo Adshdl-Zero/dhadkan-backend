@@ -3,6 +3,7 @@ const { Schema, model, Types } = mongoose;
 
 const medicineSchema = new mongoose.Schema({
     name : { type : String , required : true},
+    class: { type : String , enum: ['A', 'B', 'C', 'D'], required : true},
     format :{ type : String , enum: ['Tablet', 'Syrup']},
     dosage : { type : String },
     frequency: {

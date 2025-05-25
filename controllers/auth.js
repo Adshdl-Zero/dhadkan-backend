@@ -32,7 +32,7 @@ router.post('/login', async (req, res) => {
         );
         res.json(responses.success(token));
     } catch (error) {
-        console.log(error);
+        // console.log(error);
         res.json(responses.error("Some error occurred."));
     }
 })
@@ -63,7 +63,7 @@ router.post('/get-details', authMiddleware, async (req, res) => {
                 diagnosis: disease==='Other' ? otherDisease : disease,
             };
             
-            console.log(detail);      
+            // console.log(detail);      
             
             res.json({
                 status: "success", 

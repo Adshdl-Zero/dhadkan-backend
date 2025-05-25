@@ -3,6 +3,7 @@ const User = require('../models/user');
 const PatientDrug = require("../models/PatientDrug");
 const responses = require('../utils/responses')
 const authMiddleware = require('./authMiddleware');
+const mongoose = require('mongoose');
 
 const router = express.Router();
 
@@ -80,7 +81,7 @@ router.post('/add', authMiddleware, async (req, res) => {
     return res.status(500).json(responses.error(error.message || "Server error"));
   }
 
-})
+});
 
 router.post('/get-daily-data', authMiddleware, async (req, res) => {
   try {
@@ -88,7 +89,7 @@ router.post('/get-daily-data', authMiddleware, async (req, res) => {
 
     // Fetch and sort by created_at (descending order = newest first)
     const patientDrugs = await PatientDrug.find({ mobile }).sort({ created_at: -1 });
-    console.log(patientDrugs);
+    // console.log(patientDrugs);
 
     if (!patientDrugs) {
       return res.status(404).json({ success: false, message: "No records found for this mobile number" });
@@ -103,6 +104,37 @@ router.post('/get-daily-data', authMiddleware, async (req, res) => {
 
 router.post('/validate-token', authMiddleware, (req, res) => {
     res.status(200).json({status: 'valid'});
+});
+
+router.delete('/history/:historyId', authMiddleware, async (req, res) => {
+    const { historyId } = req.params;
+    const userId = req.user._id; 
+
+    if (!mongoose.Types.ObjectId.isValid(historyId)) {
+        return res.status(400).json(responses.error("Invalid history ID format."));
+    }
+
+    try {
+        const historyEntry = await PatientDrug.findById(historyId);
+        if (!historyEntry) {
+            return res.status(404).json(responses.error("History entry not found."));
+        }
+        const isPatientOfRecord = historyEntry.patient.equals(userId);
+
+        if (!isPatientOfRecord) {
+            return res.status(403).json(responses.error("Unauthorized: You do not have permission to delete this entry."));
+        }
+
+        await PatientDrug.findByIdAndDelete(historyId);
+        return res.status(200).json(responses.success("History entry deleted successfully.", { deletedId: historyId }));
+
+    } catch (err) {
+        console.error("Error deleting patient history entry:", err);
+        if (err.kind === 'ObjectId' || err.name === 'CastError') { 
+            return res.status(404).json(responses.error("History entry not found or ID is invalid."));
+        }
+        return res.status(500).json(responses.error("Server error while deleting history entry."));
+    }
 });
 
 module.exports = router;
