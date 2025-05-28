@@ -15,7 +15,8 @@ const medicineSchema = new mongoose.Schema({
         type: String,
         required: function() { return this.frequency === 'Other'; }
     },
-    genric : { type : String},
+    medicineTiming : { type : String, required : true},
+    generic : { type : String},
     company_name:{ type: String }
 });
 
@@ -42,6 +43,7 @@ const patientDrugSchema = new mongoose.Schema({
     weight : { type : Number },
     sbp : { type : Number },
     dbp : { type : Number},
+    hr : { type : Number },
 
     status :{ type : String, enum: ['Same', 'Better', 'Worse'] },
     can_walk : { type : String, enum: ['Yes','No']},

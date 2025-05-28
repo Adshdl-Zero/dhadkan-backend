@@ -98,6 +98,7 @@ router.post('/allpatient', authMiddleware, async (req, res) => {
                     timeStamp: new Date(drug.created_at),
                     sbp: drug.sbp,
                     dbp: drug.dbp,
+                    hr: drug.hr,
                     weight: drug.weight
                 });
             });            
@@ -106,6 +107,7 @@ router.post('/allpatient', authMiddleware, async (req, res) => {
             const graphData = {
                 sbp: [],
                 dbp: [],
+                hr: [],
                 weight: [],
                 time: [] 
             };            
@@ -113,6 +115,7 @@ router.post('/allpatient', authMiddleware, async (req, res) => {
             combinedData.forEach((data, index) => {
                 graphData.sbp.push(data.sbp || 0);
                 graphData.dbp.push(data.dbp || 0);
+                graphData.hr.push(data.hr || 0);
                 graphData.weight.push(data.weight || 0);
                 graphData.time.push(index); 
             });
@@ -231,6 +234,7 @@ router.post('/adddrugpatient', authMiddleware, async (req, res) => {
     weight,
     sbp,
     dbp,
+    hr,
     status,
     can_walk,
     can_climb,
@@ -251,6 +255,7 @@ router.post('/adddrugpatient', authMiddleware, async (req, res) => {
       weight: weight ? Number(weight) : undefined,
       sbp: sbp ? Number(sbp) : undefined,
       dbp: dbp ? Number(dbp) : undefined,
+      hr: hr ? Number(hr) : undefined,
       status,
       can_walk,
       can_climb,
