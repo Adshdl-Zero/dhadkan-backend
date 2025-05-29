@@ -8,7 +8,7 @@ const medicineSchema = new mongoose.Schema({
     dosage : { type : String },
     frequency: {
         type: String,
-        enum: ['Once a day', 'Twice a day', 'Thrice a day', 'Other'],
+        enum: ['Once a day', 'Twice a day', 'Thrice a day', 'Four times a day', 'Other'],
         default: 'Once a day'
     },
     customFrequency: { 
