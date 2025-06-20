@@ -88,12 +88,26 @@ router.post('/add', authMiddleware, async (req, res) => {
 router.post('/get-daily-data', authMiddleware, async (req, res) => {
   try {
     const mobile = req.user.mobile;
+    const { date } = req.body; // Expect date in YYYY-MM-DD format
+
+    let query = { mobile };
+    if (date) {
+      // Validate date format
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+        return res.status(400).json({ success: false, message: "Invalid date format. Use YYYY-MM-DD" });
+      }
+      // Convert date to start and end of day in UTC
+      const startDate = new Date(date);
+      startDate.setUTCHours(0, 0, 0, 0);
+      const endDate = new Date(date);
+      endDate.setUTCHours(23, 59, 59, 999);
+      query.created_at = { $gte: startDate, $lte: endDate };
+    }
 
     // Fetch and sort by created_at (descending order = newest first)
-    const patientDrugs = await PatientDrug.find({ mobile }).sort({ created_at: -1 });
-    // console.log(patientDrugs);
+    const patientDrugs = await PatientDrug.find(query).sort({ created_at: -1 });
 
-    if (!patientDrugs) {
+    if (!patientDrugs || patientDrugs.length === 0) {
       return res.status(404).json({ success: false, message: "No records found for this mobile number" });
     }
 
@@ -102,7 +116,7 @@ router.post('/get-daily-data', authMiddleware, async (req, res) => {
     console.error('Error fetching patient drug data:', error);
     res.status(500).json({ success: false, message: 'Server error', error: error.message });
   }
-})
+});
 
 router.post('/validate-token', authMiddleware, (req, res) => {
     res.status(200).json({status: 'valid'});
