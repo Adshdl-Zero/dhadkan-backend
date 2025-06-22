@@ -320,7 +320,7 @@ router.post('/patient-drug-data/mobile/:mobile', authMiddleware, async (req, res
     }
 
     const mobile = req.params.mobile;
-    const { date } = req.body; // Expect date in YYYY-MM-DD format
+    const { date } = req.body; // Expect date in YYYY-MM-DD format from the client
 
     if (!mobile || mobile.length < 10) {
       return res.status(400).json({ success: false, message: "Invalid mobile number format" });
@@ -330,20 +330,35 @@ router.post('/patient-drug-data/mobile/:mobile', authMiddleware, async (req, res
     if (date) {
       // Validate date format
       if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-        return res.status(400).json({ success: false, message: "Invalid date format Америкация Use YYYY-MM-DD" });
+        return res.status(400).json({ success: false, message: "Invalid date format. Use YYYY-MM-DD" });
       }
-      const startDate = new Date(date);
-      startDate.setUTCHours(0, 0, 0);
-      const endDate = new Date(date);
-      endDate.setUTCHours(23, 59, 59, 999);
-      query.created_at = { $gte: startDate, $lte: endDate };
+
+      const dateParts = date.split('-').map(Number);
+      const year = dateParts[0];
+      const month = dateParts[1] - 1; 
+      const day = dateParts[2];
+
+      const selectedDateUTCStart = new Date(Date.UTC(year, month, day, 0, 0, 0)); 
+
+      const IST_OFFSET_MINUTES = -330;
+      const startDateIST = new Date(selectedDateUTCStart.getTime() - (IST_OFFSET_MINUTES * 60 * 1000));
+
+      const endDateIST = new Date(startDateIST.getTime() + (24 * 60 * 60 * 1000) - 1);
+
+      query.created_at = { $gte: startDateIST, $lte: endDateIST };
+
+      // console.log('--- Date Filtering Debug (IST Adjusted) ---');
+      // console.log('Received date string (YYYY-MM-DD):', date);
+      // console.log('Calculated startDate for IST (UTC):', startDateIST.toISOString());
+      // console.log('Calculated endDate for IST (UTC):', endDateIST.toISOString());
+      // console.log('MongoDB Query for created_at:', query.created_at);
+      // console.log('-------------------------------------------');
     }
 
-    // Fetch and sort by created_at (descending order = newest first)
     const patientDrugs = await PatientDrug.find(query).sort({ created_at: -1 });
 
     if (!patientDrugs || patientDrugs.length === 0) {
-      return res.status(404).json({ success: false, message: "No records found for this mobile number" });
+      return res.status(404).json({ success: false, message: "No records found for this mobile number for the selected date." });
     }
 
     res.json({ success: true, data: patientDrugs });
@@ -351,7 +366,7 @@ router.post('/patient-drug-data/mobile/:mobile', authMiddleware, async (req, res
     console.error('Error fetching patient drug data:', error);
     res.status(500).json({ success: 'Server error', error: error.message });
   }
-});
+})
 
 router.delete('/history/:historyId', authMiddleware, async (req, res) => {
     const { historyId } = req.params;
