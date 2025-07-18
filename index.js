@@ -11,6 +11,7 @@ const doctorRoutes = require('./controllers/doctor');
 const authRoutes = require('./controllers/auth')
 const chatRoutes = require('./controllers/chat');
 const reportRoutes = require('./controllers/report_upload')
+const medicineRoutes = require('./models/Drugs')
 
 const port = process.env.PORT || 3000;
 
@@ -29,6 +30,7 @@ app.use('/doctor', doctorRoutes);
 app.use('/auth', authRoutes);
 app.use('/chat', chatRoutes);
 app.use('/reports', reportRoutes);
+app.use('/drugs', medicineRoutes)
 
 
 app.get('/', (req, res) => {
