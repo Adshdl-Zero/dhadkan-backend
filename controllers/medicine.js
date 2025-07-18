@@ -26,25 +26,37 @@ router.get('/get', async (req, res) => {
             return foundClass ? foundClass.drugNames.sort() : [];
         });
 
-
-        res.status(200).json(groupedDrugs);
+        res.status(200).json({
+            success: "true",
+            data: finalOutput
+        });
     } catch (error) {
         console.error('Error fetching drugs:', error);
-        res.status(500).json({ message: 'Failed to retrieve drugs', error: error.message });
+        res.status(500).json({ 
+            success: "false",
+            message: 'Failed to retrieve drugs', 
+            error: error.message 
+        });
     }
-})
+});
 
 router.post('/add', async (req, res) => {
     try {
         const { name, class: drugClass } = req.body; 
 
         if (!name || !drugClass) {
-            return res.status(400).json({ message: 'Name and class are required.' });
+            return res.status(400).json({ 
+                success: "false",
+                message: 'Name and class are required.' 
+            });
         }
 
         const allowedClasses = ['A', 'B', 'C', 'D'];
         if (!allowedClasses.includes(drugClass)) {
-            return res.status(400).json({ message: `Invalid class. Must be one of: ${allowedClasses.join(', ')}` });
+            return res.status(400).json({ 
+                success: "false",
+                message: `Invalid class. Must be one of: ${allowedClasses.join(', ')}` 
+            });
         }
 
         const newDrug = new Drugs({
@@ -54,15 +66,26 @@ router.post('/add', async (req, res) => {
 
         await newDrug.save();
 
-        res.status(201).json({ message: 'Drug added successfully', drug: newDrug });
+        res.status(201).json({ 
+            success: "true",
+            message: 'Drug added successfully', 
+            drug: newDrug 
+        });
     } catch (error) {
         console.error('Error adding drug:', error);
         if (error.code === 11000) { 
-            return res.status(409).json({ message: 'Drug with this name already exists.', error: error.message });
+            return res.status(409).json({ 
+                success: "false",
+                message: 'Drug with this name already exists.', 
+                error: error.message 
+            });
         }
-        res.status(500).json({ message: 'Failed to add drug', error: error.message });
+        res.status(500).json({ 
+            success: "false",
+            message: 'Failed to add drug', 
+            error: error.message 
+        });
     }
-})
-
+});
 
 module.exports = router;
