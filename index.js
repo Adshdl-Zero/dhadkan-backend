@@ -11,7 +11,7 @@ const doctorRoutes = require('./controllers/doctor');
 const authRoutes = require('./controllers/auth')
 const chatRoutes = require('./controllers/chat');
 const reportRoutes = require('./controllers/report_upload')
-const medicineRoutes = require('./models/Drugs')
+const medicineRoutes = require('./controllers/medicine')
 
 const port = process.env.PORT || 3000;
 
